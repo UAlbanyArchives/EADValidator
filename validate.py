@@ -19,6 +19,185 @@ def validate(xml_filename):
 				issueCount = issueCount + 1
 				issueTriplet.append(["<" + element.tag + ">" + " @normal is incorrect, contains alphabetical characters.", str(element.getroottree().getpath(element)), str(element.sourceline) + ":"])
 		return issueCount, issueTriplet
+		
+	def check_series(issueCount, issueTriplet, parent, series, collId):
+		#id check
+		if not "id" in series.attrib:
+			issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Component <" + series.tag + "> missing @id", series)
+		else:
+			if not series.attrib['id'].startswith('nam_' + collId):
+				issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Component <" + series.tag + "> @id is incorrect", series)
+		if series.find('did') is None:
+			issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing <did> in <" + series.tag + "> element", series)
+		else:
+			if series.find('did/unititle') is None:
+				issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing <unititle> in <" + series.tag + "> element", series.find('did'))
+			elif series.find('did/unitid') is None:
+				issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing <unitid> in <" + series.tag + "> element", series.find('did'))
+			elif series.find('did/unitdate') is None:
+				issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing <unitdate> in <" + series.tag + "> element", series.find('did'))
+			elif series.find('did/physdesc') is None:
+				issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing <physdesc> in <" + series.tag + "> element", series.find('did'))
+			seriesDate = 0
+			for seriesChild in series.find('did'):			
+				if not seriesChild.text:
+					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<" + seriesChild.tag + "> element is empty", seriesChild)
+				elif seriesChild.tag == "unittitle":
+					if not "label" in seriesChild.attrib:
+						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing @label in <unittitle>", seriesChild)
+					else:
+						if seriesChild.attrib['label'] == "Series" or seriesChild.attrib['label'] == "Subseries":
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid @label in <unittitle>, should be 'Series' or 'Subseries'", seriesChild)
+				elif seriesChild.tag == "unitdate":
+					seriesDate = seriesDate + 1
+					issueCount, issueTriplet = check_normal(issueCount, issueTriplet, series.find('did'), seriesChild)
+					if "," in seriesChild.text:
+						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid comma (,) in <unitdate>", seriesChild)
+					if "circa" in seriesChild.lower():
+						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid 'circa' in <unitdate>, must use 'ca.'", seriesChild)
+					if "Ca." in seriesChild.lower():
+						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid 'Ca.' in <unitdate>, must use 'ca.'", seriesChild)
+					if "undated" in seriesChild:
+						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid 'undated' in <unitdate>, should be 'Undated'", seriesChild)
+					if seriesDate > 5:
+						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Too many <unitdate> elements in <" + series.tag + "> element, limit is 5", seriesChild)
+				elif seriesChild.tag == "unitid":
+					if not float(seriesChild.text):
+						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<unitdate> is invalid, examples include '3' or '1.2'", seriesChild)
+				elif seriesChild.tag == "physdesc":
+					if not seriesChild.find('extent') is None:
+						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<extent> should not be used", seriesChild)
+					else:
+						if seriesChild.text.startswith(' ') or seriesChild.text.endswith(' '):
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<physdesc> element has leading or trailing spaces", seriesChild)
+						if not seriesChild.text.endswith(' cubic ft.'):
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<physdesc> units are incorrect, should be 'cubic ft.'", seriesChild)
+						else:
+							volume = seriesChild.text[:-10]
+							if re.search('[a-zA-Z]', volume):
+								issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<physdesc> error, should contain only numbers and units", seriesChild)
+				else:
+					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid element <" + seriesChild.tag + "> in <" + series.tag + ">", seriesChild)
+		if series.find('scopecontent') is None:
+			issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<scopecontent> missing in <" + series.tag + ">", series)
+		if series.find('arrangement') is None:
+			issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<arrangement> missing in <" + series.tag + ">", series)
+		for seriesDesc in series:
+			if seriesDesc.tag == "did":
+				pass
+			elif seriesDesc.tag == "scopecontent":
+				if seriesDesc.find('p') is None:
+					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing <p> element in <scopecontent>", seriesDesc)
+				else:
+					for para in seriesDesc:
+						if not para.text:
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<p> element is empty", para)
+			elif seriesDesc.tag == "arrangement":
+				if seriesDesc.find('p') is None:
+					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing <p> element in <arrangement>", seriesDesc)
+				else:
+					for para in seriesDesc:
+						if not para.text:
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<p> element is empty", para)
+			else:
+				issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid element <" + seriesDesc.tag + "> in <" + series.tag + ">", seriesDesc)
+			
+		return issueCount, issueTriplet
+		
+	def check_file(issueCount, issueTriplet, parent, file, collId):
+		#id check
+		if not "id" in file.attrib:
+			issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Component <" + file.tag + "> missing @id", file)
+		else:
+			if not file.attrib['id'].startswith('nam_' + collId):
+				issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Component <" + file.tag + "> @id is incorrect", file)
+		if file.find('did') is None:
+			issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing <did> in file-level <" + file.tag + "> element", file)
+		else:
+			for childElement in file.find('did'):
+				if not childElement.text:
+					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<" + childElement.tag + "> element is empty", childElement)
+			if file.find('did/container') is None:
+				issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing <container> in file-level <" + file.tag + "> element", file.find('did'))
+			else:
+				if not 'type' in file.find('did/container').attrib:
+					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing <container> @type in file-level <" + file.tag + "> element", file.find('did/container'))
+				if not file.find('did/container').attrib['Box'] is None:
+					if file.find('did/container').attrib['Folder'] is None:
+						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing <container> @type='Folder' in file-level <" + file.tag + "> element", file.find('did/container'))
+				if not file.find('did/container').attrib['Folder'] is None:
+					if file.find('did/container').attrib['Box'] is None:
+						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing <container> @type='Box' in file-level <" + file.tag + "> element", file.find('did/container'))
+			if file.find('did/unittitle') is None:
+				issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing <unittitle> in file-level <" + file.tag + "> element", file.find('did'))
+			if file.find('did/unitdate') is None:
+				issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing <unitdate> in file-level <" + file.tag + "> element", file.find('did'))
+			dateCount = 0
+			for childTag in file.find('did'):
+				if childTag.tag =="unitdate":
+					dateCount = dateCount + 1
+					issueCount, issueTriplet = check_normal(issueCount, issueTriplet, file.find('did'), childTag)
+					if "," in childTag.text:
+						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid comma (,) in <unitdate>", childTag)
+					if "circa" in childTag.lower():
+						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid 'circa' in <unitdate>, must use 'ca.'", childTag)
+					if "Ca." in childTag.lower():
+						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid 'Ca.' in <unitdate>, must use 'ca.'", childTag)
+					if "undated" in childTag:
+						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid 'undated' in <unitdate>, should be 'Undated'", childTag)
+					if dateCount > 5:
+						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Too many <unitdate> elements in <" + file.tag + "> element, limit is 5", childTag)
+				invalidList = ("abstract", "daogrp", "head", "langmaterial", "materialspec", "origination", "physloc", "repository")
+				if childTag.tag in invalidList:
+					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid element <" + childTag.tag + "> in <unitdate>", childTag)
+				if childTag.tag == "dao":
+					if "actuate" in childTag.attrib:
+						if not childTag.attrib['actuate'] == "onrequest":
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<dao> @actuate must be 'onrequest'", childTag)
+					else:
+						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<dao> @actuate missing", childTag)
+					if "linktype" in childTag.attrib:
+						if not childTag.attrib['linktype'] == "simple":
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<dao> @linktype must be 'simple'", childTag)
+					else:
+						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<dao> @linktype missing", childTag)
+					if "show" in childTag.attrib:
+						if not childTag.attrib['show'] == "new":
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<dao> @show must be 'new'", childTag)
+					else:
+						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<dao> @show missing", childTag)
+					if "href" in childTag.attrib:
+						if not childTag.attrib['href'].startswith('http://library.albany.edu/speccoll/findaids/eresources/digital_objects/'):
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<dao> @href is incorrect", childTag)
+					else:
+						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<dao> @href missing", childTag)
+					if "id" in childTag.attrib:
+						if not childTag.attrib['id'].startswith('nam_' + collId):
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<dao> @id is incorrect", childTag)
+					else:
+						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<dao> @id missing", childTag)
+				#if childTag == "physdesc":
+					#conditions here
+		for childElement in file:
+			if childElement.tag == "did":
+				pass
+			elif childElement.tag == "scopecontent":
+				if not childElement.text:
+					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<scopecontent> is missing", childElement)
+			elif childElement.tag == "note":
+				if not childElement.text:
+					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<note> is missing", childElement)
+			elif childElement.tag == "accessrestrict":
+				if childElement.find('p') is None:
+					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing element <p> in <accessrestrict>", childElement)
+				else:
+					if not childElement.find('p').text == "Must consult archivist before viewing this material.":
+						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<accessrestrict> message is incorrect", childElement)
+			else:
+				issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid element <" + childElement.tag + "> in <" + file.tag + ">", childElement)
+							
+		return issueCount, issueTriplet
+		
 	
 	issueCount = 0
 	issueTriplet = []
@@ -599,12 +778,102 @@ def validate(xml_filename):
 		#invalid elements
 		acceptElements = ("did", "accessrestrict", "userestrict", "acqinfo", "prefercite", "scopecontent", "bioghist", "arrangement", "controlaccess", "bibliography", "relatedmaterial", "separatedmaterial", "dsc")
 		for archdescChild in archdesc:
-			if archdescChild.tag not in acceptElements:
-				issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid element <" + archdescChild.tag + "> in <archdesc>", archdescChild)
+			if not archdescChild.tag in acceptElements:
+				if not archdescChild.tag is ET.Comment:
+					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid element <" + archdescChild.tag + "> in <archdesc>", archdescChild)
+
 				
-		
 		#dsc (Container List)
-		
-		
+		if archdesc.find('dsc') is None:
+			pass
+		else:
+			if archdesc.find('dsc/head') is None:
+				issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<head> missing in <dsc>", archdesc.find('dsc'))
+			elif archdesc.find('dsc/head').text.startswith(' ') or archdesc.find('dsc/head').text.endswith(' '):
+				issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<head> contains leading or trailing spaces", archdesc.find('dsc/head'))
+			elif not archdesc.find('dsc/head').text == "Container List":
+				issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<head> is incorrect, should be 'Container List'", archdesc.find('dsc/head'))
+			if archdesc.find('dsc/c') is None:
+				pass
+			else:
+				issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid element <c> in container list, use <c01>, <c02>, etc", archdesc.find('dsc/c'))
+			if archdesc.find('dsc/c01') is None:
+				issueCount, issueTriplet = error_check(issueCount, issueTriplet, "No <c01> in <dsc>, if only collection-level then remove <dsc>", archdesc.find('dsc'))
+			else:
+						
+				#c01
+				for cmpnt in archdesc.find('dsc'):	
+					if cmpnt.tag == "head" or cmpnt.tag is ET.Comment:
+						pass
+					elif not cmpnt.tag == "c01":
+						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid element <" + cmpnt.tag + ">", cmpnt)
+					else:
+						if cmpnt.find('c02') is None:
+							#file level
+							issueCount, issueTriplet = check_file(issueCount, issueTriplet, archdesc.find('dsc'), cmpnt, collId)
+						else:
+							#series level
+							issueCount, issueTriplet = check_series(issueCount, issueTriplet, archdesc.find('dsc'), cmpnt, collId)
+							
+							#c02
+							for cmpnt2 in cmpnt:
+								if cmpnt2.tag is ET.Comment:
+									pass
+								elif not cmpnt2.tag == "c02":
+									pass
+								else:
+									if cmpnt2.find('c03') is None:
+										#file level
+										issueCount, issueTriplet = check_file(issueCount, issueTriplet, cmpnt, cmpnt2, collId)
+									else:
+										#subseries level
+										issueCount, issueTriplet = check_series(issueCount, issueTriplet, cmpnt, cmpnt2, collId)
+										
+										#c03
+										for cmpnt3 in cmpnt2:
+											if cmpnt3.tag is ET.Comment:
+												pass
+											elif not cmpnt3.tag == "c03":
+												pass
+											else:
+												if cmpnt3.find('c04') is None:
+													#file level
+													issueCount, issueTriplet = check_file(issueCount, issueTriplet, cmpnt2, cmpnt3, collId)
+												else:
+													#subsubseries level
+													issueCount, issueTriplet = check_series(issueCount, issueTriplet, cmpnt2, cmpnt3, collId)
+													
+													#c04
+													for cmpnt4 in cmpnt3:
+														if cmpnt4.tag is ET.Comment:
+															pass
+														elif not cmpnt4.tag == "c04":
+															pass
+														else:
+															if cmpnt4.find('c05') is None:
+																#file level
+																issueCount, issueTriplet = check_file(issueCount, issueTriplet, cmpnt3, cmpnt4, collId)
+															else:
+																#subsubseries level
+																issueCount, issueTriplet = check_series(issueCount, issueTriplet, cmpnt3, cmpnt4, collId)
+																
+																#c05
+																for cmpnt5 in cmpnt4:
+																	if cmpnt5.tag is ET.Comment:
+																		pass
+																	elif not cmpnt5.tag == "c05":
+																		pass
+																	else:
+																		if cmpnt5.find('c06') is None:
+																			#file level
+																			issueCount, issueTriplet = check_file(issueCount, issueTriplet, cmpnt4, cmpnt5, collId)
+																		else:
+																			#subsubseries level
+																			issueCount, issueTriplet = check_series(issueCount, issueTriplet, cmpnt4, cmpnt5, collId)
+																			
+																			#c06
+																			for cmpnt6 in cmpnt5:
+																				issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Must have permission to use <c06> or below", cmpnt6)
+																				
 	finally:
 		return issueCount, issueTriplet
