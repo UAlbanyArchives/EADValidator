@@ -260,7 +260,7 @@ def validate(xml_filename):
 				issueCount, issueTriplet = error_check(issueCount, issueTriplet,"<unittitle> element has no collection name.", xml_root.find('archdesc/did/unittitle'))
 			if xml_root.find('archdesc/did/unittitle').text.isupper() or xml_root.find('archdesc/did/unittitle').text.islower():
 				issueCount, issueTriplet = error_check(issueCount, issueTriplet,"Case issue in collection-level <unittitle>", xml_root.find('archdesc/did/unittitle'))
-
+		
 		#check unique ids
 		filename =  os.path.basename(xml_filename)
 		collId = os.path.splitext(filename)[0]
@@ -402,9 +402,14 @@ def validate(xml_filename):
 			issueCount, issueTriplet = error_check(issueCount, issueTriplet, "No collection-level <unitdate>", archdesc.find('did/unittitle'))
 		else:
 			issueCount, issueTriplet = check_normal(issueCount, issueTriplet, xml_root, xml_root.find('archdesc/did/unittitle/unitdate'))
-			if not archdesc.find('did/unittitle/unitdate').attrib['type'] == "inclusive":
-				issueCount, issueTriplet = error_check(issueCount, issueTriplet, "No collection-level <unitdate> listed as 'inclusive'", archdesc.find('did/unittitle/unitdate'))
-		
+			if "type" in archdesc.find('did/unittitle/unitdate').attrib:
+				if archdesc.find('did/unittitle/unitdate').attrib['type'] == "inclusive":
+					pass
+				else:
+					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "No collection-level <unitdate> listed as 'inclusive'", archdesc.find('did/unittitle/unitdate'))
+			else:
+				issueCount, issueTriplet = error_check(issueCount, issueTriplet, "No collection-level <unitdate> @type'", archdesc.find('did/unittitle/unitdate'))
+				
 		#abstract
 		if archdesc.find('did/abstract') is None:
 			issueCount, issueTriplet = error_check(issueCount, issueTriplet, "No collection-level <abstract> listed", archdesc.find('did'))
