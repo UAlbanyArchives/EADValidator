@@ -48,7 +48,7 @@ def validate(xml_filename):
 					if not "label" in seriesChild.attrib:
 						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing @label in <unittitle>", seriesChild)
 					else:
-						if seriesChild.attrib['label'] == "Series" or seriesChild.attrib['label'] == "Subseries":
+						if not seriesChild.attrib['label'] == "Series" or seriesChild.attrib['label'] == "Subseries":
 							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid @label in <unittitle>, should be 'Series' or 'Subseries'", seriesChild)
 				elif seriesChild.tag == "unitdate":
 					seriesDate = seriesDate + 1
