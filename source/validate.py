@@ -44,12 +44,15 @@ def validate(xml_filename):
 			for seriesChild in series.find('did'):			
 				if not seriesChild.text:
 					if not seriesChild.tag == "physdesc":
-						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<" + seriesChild.tag + "> element is empty", seriesChild)
+						if childElement.find('emph') is None:
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<" + seriesChild.tag + "> element is empty", seriesChild)
 				elif seriesChild.tag == "unittitle":
 					if not "label" in seriesChild.attrib:
 						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing @label in <unittitle>", seriesChild)
 					else:
-						if not seriesChild.attrib['label'] == "Series" or seriesChild.attrib['label'] == "Subseries":
+						if seriesChild.attrib['label'] == "Series" or seriesChild.attrib['label'] == "Subseries":
+							pass
+						else:
 							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid @label in <unittitle>, should be 'Series' or 'Subseries'", seriesChild)
 				elif seriesChild.tag == "unitdate":
 					seriesDate = seriesDate + 1
@@ -136,7 +139,8 @@ def validate(xml_filename):
 			for childElement in file.find('did'):
 				if not childElement.text:
 					if not childElement.tag == "physdesc":
-						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<" + childElement.tag + "> element is empty", childElement)
+						if childElement.find('emph') is None:
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<" + childElement.tag + "> element is empty", childElement)
 			if file.find('did/container') is None:
 				issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing <container> in file-level <" + file.tag + "> element", file.find('did'))
 			else:
@@ -493,7 +497,7 @@ def validate(xml_filename):
 						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "@encodinganalog for creator <corpname> is incorrect, should be '110'", archdesc.find('did/origination/corpname'))
 					if archdesc.find('did/origination/corpname').attrib['source'] is None:
 						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing @source for creator <corpname>", archdesc.find('did/origination/corpname'))
-					elif not archdesc.find('did/origination/corpname').attrib['source'] == "lcsh" or archdesc.find('did/origination/corpname').attrib['source'] == "local":
+					elif not archdesc.find('did/origination/corpname').attrib['source'] == "lcsh" and not archdesc.find('did/origination/corpname').attrib['source'] == "local":
 						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "@source for creator <corpname> is incorrect, should be 'lcsh' or 'local'", archdesc.find('did/origination/corpname'))
 				if not archdesc.find('did/origination/persname') is None:
 					if not archdesc.find('did/origination/persname').text:
@@ -504,7 +508,7 @@ def validate(xml_filename):
 						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "@encodinganalog for creator <persname> is incorrect, should be '100'", archdesc.find('did/origination/persname'))
 					if archdesc.find('did/origination/persname').attrib['source'] is None:
 						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing @source for creator <persname>", archdesc.find('did/origination/persname'))
-					elif not archdesc.find('did/origination/persname').attrib['source'] == "lcsh" or archdesc.find('did/origination/persname').attrib['source'] == "local":
+					elif not archdesc.find('did/origination/persname').attrib['source'] == "lcsh" and not archdesc.find('did/origination/persname').attrib['source'] == "local":
 						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "@source for creator <persname> is incorrect, should be 'lcsh' or 'local'", archdesc.find('did/origination/persname'))
 				if not archdesc.find('did/origination/famname') is None:
 					if not archdesc.find('did/origination/famname').text:
@@ -515,7 +519,7 @@ def validate(xml_filename):
 						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "@encodinganalog for creator <famname> is incorrect, should be '100'", archdesc.find('did/origination/famname'))
 					if archdesc.find('did/origination/famname').attrib['source'] is None:
 						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing @source for creator <famname>", archdesc.find('did/origination/famname'))
-					elif not archdesc.find('did/origination/famname').attrib['source'] == "lcsh" or archdesc.find('did/origination/famname').attrib['source'] == "local":
+					elif not archdesc.find('did/origination/famname').attrib['source'] == "lcsh" and not archdesc.find('did/origination/famname').attrib['source'] == "local":
 						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "@source for creator <famname> is incorrect, should be 'lcsh' or 'local'", archdesc.find('did/origination/famname'))
 		
 		#physdesc
