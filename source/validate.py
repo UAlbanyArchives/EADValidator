@@ -43,7 +43,8 @@ def validate(xml_filename):
 			seriesDate = 0
 			for seriesChild in series.find('did'):			
 				if not seriesChild.text:
-					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<" + seriesChild.tag + "> element is empty", seriesChild)
+					if not seriesChild.tag == "physdesc":
+						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<" + seriesChild.tag + "> element is empty", seriesChild)
 				elif seriesChild.tag == "unittitle":
 					if not "label" in seriesChild.attrib:
 						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing @label in <unittitle>", seriesChild)
@@ -65,17 +66,29 @@ def validate(xml_filename):
 					if not float(seriesChild.text):
 						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<unitdate> is invalid, examples include '3' or '1.2'", seriesChild)
 				elif seriesChild.tag == "physdesc":
-					if not seriesChild.find('extent') is None:
-						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<extent> should not be used", seriesChild)
-					else:
-						if seriesChild.text.startswith(' ') or seriesChild.text.endswith(' '):
-							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<physdesc> element has leading or trailing spaces", seriesChild)
-						if not seriesChild.text.endswith(' cubic ft.'):
-							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<physdesc> units are incorrect, should be 'cubic ft.'", seriesChild)
+					if seriesChild.find('extent') is None:
+						if seriesChild.find('physfacet') is None:
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "No <extent> or <physfacet> element", seriesChild)
 						else:
-							volume = seriesChild.text[:-10]
-							if re.search('[a-zA-Z]', volume):
-								issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<physdesc> error, should contain only numbers and units", seriesChild)
+							if seriesChild.find('physfacet').text:
+								pass
+							else:
+								issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<physfacet> element has no description", seriesChild.find('physfacet'))
+					else:
+						if not "unit" in seriesChild.find('extent').attrib:
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "No @unit in <extent> element", seriesChild.find('extent'))
+						elif not seriesChild.find('extent').attrib['unit'] == "cubic ft.":
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid @unit in <extent>, should be 'cubic ft.'", seriesChild.find('extent'))
+						try:
+							int(seriesChild.find('extent').text)
+						except ValueError:
+							try:
+								float(seriesChild.find('extent').text)
+								if seriesChild.find('extent').text.startswith('.'):
+									issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid <extent>, decimals must start with '0'",seriesChild.find('extent'))
+							except ValueError:
+								issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid <extent>, should only be number or decimal", seriesChild.find('extent'))
+					
 				else:
 					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid element <" + seriesChild.tag + "> in <" + series.tag + ">", seriesChild)
 		if series.find('scopecontent') is None:
@@ -99,6 +112,9 @@ def validate(xml_filename):
 					for para in seriesDesc:
 						if not para.text:
 							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<p> element is empty", para)
+			elif seriesDesc.tag == "accessrestrict":
+				if seriesDesc.find('p') is None:
+					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing element <p> in <accessrestrict>", seriesDesc)
 			elif seriesDesc.tag.startswith('c0'):
 				pass
 			else:
@@ -119,7 +135,8 @@ def validate(xml_filename):
 			containerTypes = ('Oversized', 'Video-Tape', 'Mini-DV', 'Reel', 'DVD', 'Cassette', 'Card-File', 'Artifact-box', 'Flat-File', 'VHS', 'Umatic', 'Phonograph-Record', '3.5in-Floppy', '5.25in-Floppy', 'Film', 'Map-Tube', 'CD', 'CD-R', 'Zip-Disk', 'Floppy-Disk')
 			for childElement in file.find('did'):
 				if not childElement.text:
-					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<" + childElement.tag + "> element is empty", childElement)
+					if not childElement.tag == "physdesc":
+						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<" + childElement.tag + "> element is empty", childElement)
 			if file.find('did/container') is None:
 				issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing <container> in file-level <" + file.tag + "> element", file.find('did'))
 			else:
@@ -196,8 +213,30 @@ def validate(xml_filename):
 							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<dao> @id is incorrect", childTag)
 					else:
 						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<dao> @id missing", childTag)
-				#if childTag == "physdesc":
-					#conditions here
+				if childTag == "physdesc":
+					if childTag.find('extent') is None:
+						if childTag.find('physfacet') is None:
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "No <extent> or <physfacet> element", childTag)
+						else:
+							if childTag.find('physfacet').text:
+								pass
+							else:
+								issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<physfacet> element has no description", childTag.find('physfacet'))
+					else:
+						if not "unit" in childTag.find('extent').attrib:
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "No @unit in <extent> element", childTag.find('extent'))
+						elif not childTag.find('extent').attrib['unit'] == "cubic ft.":
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid @unit in <extent>, should be 'cubic ft.'", childTag.find('extent'))
+						try:
+							int(childTag.find('extent').text)
+						except ValueError:
+							try:
+								float(childTag.find('extent').text)
+								if childTag.find('extent').text.startswith('.'):
+									issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid <extent>, decimals must start with '0'",childTag.find('extent'))
+							except ValueError:
+								issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid <extent>, should only be number or decimal", childTag.find('extent'))
+					
 		for childElement in file:
 			if childElement.tag == "did":
 				pass
@@ -483,19 +522,28 @@ def validate(xml_filename):
 		if archdesc.find('did/physdesc') is None:
 			issueCount, issueTriplet = error_check(issueCount, issueTriplet, "No collection-level <physdesc> element", archdesc.find('did'))
 		else:
-			if not archdesc.find('did/physdesc/extent') is None:
-				issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<extent> should not be used", archdesc.find('did/physdesc'))
-			if not archdesc.find('did/physdesc').text:
-				issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Collection-level <physdesc> is empty", archdesc.find('did/physdesc'))
-			else:
-				if archdesc.find('did/physdesc').text.startswith(' ') or archdesc.find('did/physdesc').text.endswith(' '):
-					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Collection-level <physdesc> has leading or trailing spaces", archdesc.find('did/physdesc'))
-				if not archdesc.find('did/physdesc').text.endswith(' cubic ft.'):
-					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Collection-level <physdesc> units are incorrect, should be 'cubic ft.'", archdesc.find('did/physdesc'))
+			if archdesc.find('did/physdesc/extent') is None:
+				if archdesc.find('did/physdesc/physfacet') is None:
+					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "No collection-level <extent> or <physfacet> element", archdesc.find('did/physdesc'))
 				else:
-					volume = archdesc.find('did/physdesc').text[:-10]
-					if re.search('[a-zA-Z]', volume):
-						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Collection-level <physdesc> error, should contain only numbers and units", archdesc.find('did/physdesc'))
+					if archdesc.find('did/physdesc/physfacet').text:
+						pass
+					else:
+						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Collection-level <physfacet> element has no description", archdesc.find('did/physdesc/physfacet'))
+			else:
+				if not "unit" in archdesc.find('did/physdesc/extent').attrib:
+					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "No @unit in collection-level <extent> element", archdesc.find('did/physdesc/extent'))
+				elif not archdesc.find('did/physdesc/extent').attrib['unit'] == "cubic ft.":
+					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid @unit in collection-level <extent>, should be 'cubic ft.'", archdesc.find('did/physdesc/extent'))
+				try:
+					int(archdesc.find('did/physdesc/extent').text)
+				except ValueError:
+					try:
+						float(archdesc.find('did/physdesc/extent').text)
+						if archdesc.find('did/physdesc/extent').text.startswith('.'):
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid collection-level <extent>, decimals must start with '0'", archdesc.find('did/physdesc/extent'))
+					except ValueError:
+						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid collection-level <extent>, should only be number or decimal", archdesc.find('did/physdesc/extent'))
 				
 		#physloc
 		if archdesc.find('did/physloc') is None:
