@@ -24,7 +24,7 @@ path = os.path.dirname(selfPath)
 
 htmlTemplate = "<html><head><title>EAD Validation Report</title><link href='https://maxcdn.bootstrapcdn.com/bootstrap/2.3.2/css/bootstrap.min.css' rel='stylesheet'/></head><body style='padding:10px'><div class='jumbotron'><h1 class='h1'>EAD Validation Report</h1></div><div class='row-fluid'><div class='row-fluid'><div class='span4'/><div class='span8'/></div></div></body></html>"
 htmlObject = ET.fromstring(htmlTemplate)
-collection_table = ET.fromstring("<table class='table'><tr><th>Collection</th><th>Status</th></tr></table>")
+collection_table = ET.fromstring("<table class='table'><tr><th>Collection</th><th>Status</th><th>Issues</th></tr></table>")
 collectionCount = 0
 collectionError = 0
 totalError = 0
@@ -67,10 +67,13 @@ for filename in os.listdir(path):
 		tr_element.set('class', 'success')
 		col_element = ET.Element('td')
 		sta_element = ET.Element('td')
+		iss_element = ET.Element('td')
 		col_element.text = collId
 		sta_element.text = "Valid"
+		iss_element.text = str(issueCount) + " issues."
 		tr_element.append(col_element)
 		tr_element.append(sta_element)
+		tr_element.append(iss_element)
 		collection_table.append(tr_element)
 		print filename + " is valid."
 	else:
@@ -79,13 +82,16 @@ for filename in os.listdir(path):
 		tr_element.set('class', 'error')
 		col_element = ET.Element('td')
 		sta_element = ET.Element('td')
+		iss_element = ET.Element('td')
 		a_element = ET.Element('a')
 		col_element.text = collId
 		sta_element.append(a_element)
 		a_element.set('href', '#' + collId)
 		a_element.text = "INVALID"
+		iss_element.text = str(issueCount) + " issues."
 		tr_element.append(col_element)
 		tr_element.append(sta_element)
+		tr_element.append(iss_element)
 		collection_table.append(tr_element)
 		print filename + " is invalid."
 		
