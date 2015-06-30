@@ -75,7 +75,7 @@ def validate(xml_filename):
 			elif series.find('did/physdesc') is None:
 				issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing <physdesc> in <" + series.tag + "> element", series.find('did'))
 			seriesDate = 0
-			for seriesChild in series.find('did'):			
+			for seriesChild in series.find('did'):
 				if not seriesChild.text:
 					if not seriesChild.tag == "physdesc":
 						if childElement.find('emph') is None:
@@ -100,7 +100,10 @@ def validate(xml_filename):
 					if seriesDate > 5:
 						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Too many <unitdate> elements in <" + series.tag + "> element, limit is 5", seriesChild)
 					if seriesChild.text[:1].isalpha():
-						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<unitdate> does not conform to DACS, begins with letter", seriesChild)
+						if seriesChild.text.startswith('ca.') or seriesChild.text.lower() == "undated":
+							pass
+						else:
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<unitdate> does not conform to DACS, begins with letter", seriesChild)
 				elif seriesChild.tag == "unitid":
 					if not float(seriesChild.text):
 						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<unitdate> is invalid, examples include '3' or '1.2'", seriesChild)
@@ -127,7 +130,6 @@ def validate(xml_filename):
 									issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid <extent>, decimals must start with '0'",seriesChild.find('extent'))
 							except ValueError:
 								issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid <extent>, should only be number or decimal", seriesChild.find('extent'))
-					
 				else:
 					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid element <" + seriesChild.tag + "> in <" + series.tag + ">", seriesChild)
 		if series.find('scopecontent') is None:
@@ -232,7 +234,7 @@ def validate(xml_filename):
 					if dateCount > 5:
 						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Too many <unitdate> elements in <" + file.tag + "> element, limit is 5", childTag)
 					if childTag.text[:1].isalpha():
-						if childTag.text.startswith('ca.'):
+						if childTag.text.startswith('ca.') or childTag.text.lower() == "undated":
 							pass
 						else:
 							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<unitdate> does not conform to DACS, begins with letter", childTag)
@@ -537,8 +539,9 @@ def validate(xml_filename):
 							mixCount = mixCount + 1
 							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Collection-level <langmaterial> contains mixed-content", langTag)
 				if mixCount == 0:
-					if len(archdesc.find('did/langmaterial').text.strip()) > 0:
-						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Collection-level <langmaterial> contains mixed-content", archdesc.find('did/langmaterial'))
+					if archdesc.find('did/langmaterial').text:
+						if len(archdesc.find('did/langmaterial').text.strip()) > 0:
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Collection-level <langmaterial> contains mixed-content", archdesc.find('did/langmaterial'))
 		
 		#origination (creator)
 		if archdesc.find('did/origination') is None:
