@@ -23,34 +23,44 @@ def validate(xml_filename):
 				issueTriplet.append(["<" + element.tag + ">" + " @normal is incorrect, contains alphabetical characters.", str(element.getroottree().getpath(element)), str(element.sourceline) + ":"])
 			normalLength = (4, 7, 9, 10, 12, 15, 18, 21)
 			if not len(element.attrib['normal']) in normalLength:
+				issueCount = issueCount + 1
 				issueTriplet.append(["<" + element.tag + ">" + " @normal is invalid, does not contain a correct number of characters", str(element.getroottree().getpath(element)), str(element.sourceline) + ":"])
 			else:
 				if len(element.attrib['normal']) > 4:
 					if "/" in element.attrib['normal'] or "-" in element.attrib['normal']:
 						if element.attrib['normal'].count('/') > 1:
+							issueCount = issueCount + 1
 							issueTriplet.append(["<" + element.tag + ">" + " @normal is invalid", str(element.getroottree().getpath(element)), str(element.sourceline) + ":"])
 					else:
+						issueCount = issueCount + 1
 						issueTriplet.append(["<" + element.tag + ">" + " @normal is invalid, must use '-' or '/' to encode complex dates", str(element.getroottree().getpath(element)), str(element.sourceline) + ":"])
 				if len(element.attrib['normal']) == 9:
 					if "-" in element.attrib['normal']:
 						if element.attrib['normal'].count('-') == 1:
 							if len(element.attrib['normal'].split('-')[0]) != 4 or len(element.attrib['normal'].split('-')[1]) != 4:
+								issueCount = issueCount + 1
 								issueTriplet.append(["<" + element.tag + ">" + " @normal is invalid", str(element.getroottree().getpath(element)), str(element.sourceline) + ":"])
 						elif element.attrib['normal'].count('-') == 2:
 							if len(element.attrib['normal'].split('-')[0]) != 4 or len(element.attrib['normal'].split('-')[1]) != 2 or len(element.attrib['normal'].split('-')[3]) != 2:
+								issueCount = issueCount + 1
 								issueTriplet.append(["<" + element.tag + ">" + " @normal is invalid", str(element.getroottree().getpath(element)), str(element.sourceline) + ":"])
 						else:
+							issueCount = issueCount + 1
 							issueTriplet.append(["<" + element.tag + ">" + " @normal is invalid", str(element.getroottree().getpath(element)), str(element.sourceline) + ":"])
 					elif "/" in element.attrib['normal']:
 						if len(element.attrib['normal'].split('/')[0]) != 4 or len(element.attrib['normal'].split('/')[1]) != 4:
+							issueCount = issueCount + 1
 							issueTriplet.append(["<" + element.tag + ">" + " @normal is invalid", str(element.getroottree().getpath(element)), str(element.sourceline) + ":"])
 					else:
+						issueCount = issueCount + 1
 						issueTriplet.append(["<" + element.tag + ">" + " @normal is invalid", str(element.getroottree().getpath(element)), str(element.sourceline) + ":"])
 				elif len(element.attrib['normal']) == 7:
 					if "-" in element.attrib['normal']:
 						if len(element.attrib['normal'].split('-')[0]) != 4 or len(element.attrib['normal'].split('-')[1]) != 2:
+							issueCount = issueCount + 1
 							issueTriplet.append(["<" + element.tag + ">" + " @normal is invalid", str(element.getroottree().getpath(element)), str(element.sourceline) + ":"])
 					else:
+						issueCount = issueCount + 1
 						issueTriplet.append(["<" + element.tag + ">" + " @normal is invalid", str(element.getroottree().getpath(element)), str(element.sourceline) + ":"])
 		return issueCount, issueTriplet
 
@@ -72,8 +82,6 @@ def validate(xml_filename):
 				issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing <unitid> in <" + series.tag + "> element", series.find('did'))
 			elif series.find('did/unitdate') is None:
 				issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing <unitdate> in <" + series.tag + "> element", series.find('did'))
-			elif series.find('did/physdesc') is None:
-				issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing <physdesc> in <" + series.tag + "> element", series.find('did'))
 			seriesDate = 0
 			for seriesChild in series.find('did'):
 				if not seriesChild.text:
@@ -132,10 +140,6 @@ def validate(xml_filename):
 								issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid <extent>, should only be number or decimal", seriesChild.find('extent'))
 				else:
 					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid element <" + seriesChild.tag + "> in <" + series.tag + ">", seriesChild)
-		if series.find('scopecontent') is None:
-			issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<scopecontent> missing in <" + series.tag + ">", series)
-		if series.find('arrangement') is None:
-			issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<arrangement> missing in <" + series.tag + ">", series)
 		for seriesDesc in series:
 			if seriesDesc.tag == "did":
 				pass
@@ -174,13 +178,14 @@ def validate(xml_filename):
 		if file.find('did') is None:
 			issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing <did> in file-level <" + file.tag + "> element", file)
 		else:
-			containerTypes = ('Oversized', 'Video-Tape', 'Mini-DV', 'Reel', 'DVD', 'Cassette', 'Card-File', 'Artifact-box', 'Flat-File', 'VHS', 'Umatic', 'Phonograph-Record', '3.5in-Floppy', '5.25in-Floppy', 'Film', 'Map-Tube', 'CD', 'CD-R', 'Zip-Disk', 'Floppy-Disk')
+			containerTypes = ('Oversized', 'Video-Tape', 'Mini-DV', 'Reel', 'DVD', 'Cassette', 'Card-File', 'Artifact-box', 'Flat-File', 'VHS', 'Umatic', 'Phonograph-Record', '3.5in-Floppy', '5.25in-Floppy', 'Film', 'Map-Tube', 'CD', 'CD-R', 'Zip-Disk', 'Floppy-Disk', 'Record', 'Microfilm')
 			for childElement in file.find('did'):
 				if not childElement.text:
 					if not childElement.tag == "physdesc":
 						if not childElement.tag == "dao":
 							if childElement.find('emph') is None:
-								issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<" + childElement.tag + "> element is empty", childElement)
+								if childElement.find('title') is None:
+									issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<" + childElement.tag + "> element is empty", childElement)
 			if file.find('did/container') is None:
 				if file.find('did/dao') is None:
 					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing <container> in file-level <" + file.tag + "> element", file.find('did'))
@@ -816,7 +821,7 @@ def validate(xml_filename):
 					if "source" not in heading.attrib:
 						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "@source missing for controlled access heading", heading)
 					else:
-						if heading.attrib['source'] == "lcsh" or heading.attrib['source'] == "aat" or heading.attrib['source'] == "local":
+						if heading.attrib['source'] == "lcsh" or heading.attrib['source'] == "aat" or heading.attrib['source'] == "local" or heading.attrib['source'] == "tgm":
 							pass
 						else:
 							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "@source is incorrect, should be 'lcsh,' 'aat' or 'local'", heading)
@@ -826,7 +831,9 @@ def validate(xml_filename):
 						if not heading.attrib['encodinganalog'] == "600":
 							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "@encodinganalog incorrect", heading)
 					elif heading.tag == "corpname":
-						if not heading.attrib['encodinganalog'] == "610":
+						if heading.attrib['encodinganalog'] == "610" or heading.attrib['encodinganalog'] == "611":
+							pass
+						else:
 							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "@encodinganalog incorrect", heading)
 					elif heading.tag == "famname":
 						if not heading.attrib['encodinganalog'] == "600":
@@ -923,7 +930,7 @@ def validate(xml_filename):
 				if not archdescChild.tag is ET.Comment:
 					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid element <" + archdescChild.tag + "> in <archdesc>", archdescChild)
 
-				
+		
 		#dsc (Container List)
 		if archdesc.find('dsc') is None:
 			pass
