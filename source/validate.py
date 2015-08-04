@@ -218,7 +218,7 @@ def validate(xml_filename):
 								if not 'type' in file.find('did')[1].attrib:
 									issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing <container> @type in file-level <" + file.tag + "> element", file.find('did')[1])
 								else:
-									if file.find('did')[0].attrib['type'] != 'Box' and file.find('did')[0].attrib['type'] != 'Oversized' and file.find('did')[0].attrib['type'] != 'Flat-File' and file.find('did')[0].attrib['type'] != 'Roll' and file.find('did')[0].attrib['type'] != 'Artifact-box':
+									if file.find('did')[0].attrib['type'] != 'Box' and file.find('did')[0].attrib['type'] != 'Oversized' and file.find('did')[0].attrib['type'] != 'Flat-File' and file.find('did')[0].attrib['type'] != 'Roll' and file.find('did')[0].attrib['type'] != 'Artifact-box' and file.find('did')[0].attrib['type'] != 'Drawer':
 										issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<container> @type is invalid or out of order", file.find('did')[0])
 									if file.find('did')[1].attrib['type'] != 'Folder' and file.find('did')[1].attrib['type'] != 'Item':
 										if not file.find('did')[1].attrib['type'] in containerTypes:
@@ -264,7 +264,7 @@ def validate(xml_filename):
 					if dateCount > 5:
 						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Too many <unitdate> elements in <" + file.tag + "> element, limit is 5", childTag)
 					if childTag.text[:1].isalpha():
-						if childTag.text.startswith('ca.') or childTag.text.lower() == "undated":
+						if childTag.text.startswith('ca.') or childTag.text.lower() == "undated" or childTag.text.lower().startswith('late') or childTag.text.lower().startswith('early'):
 							pass
 						else:
 							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<unitdate> does not conform to DACS, begins with letter", childTag)
@@ -333,8 +333,8 @@ def validate(xml_filename):
 				if childElement.find('p') is None:
 					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing element <p> in <accessrestrict>", childElement)
 				else:
-					if not childElement.find('p').text == "Must consult archivist before viewing this material.":
-						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<accessrestrict> message is incorrect", childElement)
+					if not childElement.find('p').text:
+						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<accessrestrict> paragraph is empty", childElement)
 			elif childElement.tag == "langmaterial":
 				if collId.startswith('gre'):
 					pass
@@ -435,7 +435,7 @@ def validate(xml_filename):
 		#check collection <titlestmt>
 		if not xml_root.find('eadheader/filedesc/titlestmt/titleproper').text.isupper():
 			issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<titleproper> contains lower-case text", xml_root.find('eadheader/filedesc/titlestmt/titleproper'))
-		if "," in xml_root.find('eadheader/filedesc/titlestmt/titleproper').text:
+		if xml_root.find('eadheader/filedesc/titlestmt/titleproper').text.endswith(',') or xml_root.find('eadheader/filedesc/titlestmt/titleproper').text.endswith(', '):
 			issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Unnecessary comma (,) in <titleproper>", xml_root.find('eadheader/filedesc/titlestmt/titleproper'))
 		if "(" in xml_root.find('eadheader/filedesc/titlestmt/titleproper').text and ")" in xml_root.find('eadheader/filedesc/titlestmt/titleproper').text:
 			if "-" in xml_root.find('eadheader/filedesc/titlestmt/titleproper').text.rsplit('(', 1)[1]:
@@ -856,7 +856,11 @@ def validate(xml_filename):
 					pass
 				else:
 					if not heading.text:
-						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Controlled access heading is empty", heading)
+						if heading.find('emph') is None:
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Controlled access heading is empty", heading)
+						else:
+							if not heading.find('emph').text:
+								issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Controlled access heading is empty", heading)
 					if "source" not in heading.attrib:
 						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "@source missing for controlled access heading", heading)
 					else:
