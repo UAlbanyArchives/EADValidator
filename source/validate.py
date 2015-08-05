@@ -175,6 +175,23 @@ def validate(xml_filename):
 			elif seriesDesc.tag == "accessrestrict":
 				if seriesDesc.find('p') is None:
 					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing element <p> in <accessrestrict>", seriesDesc)
+				else:
+					for para in seriesDesc:
+						if para.tag == "p":
+							if not seriesDesc.find('p').text:
+								issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Empty element <p> in <accessrestrict>", seriesDesc)
+						else:
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid element " + para.tag + " in <accessrestrict>", seriesDesc)
+			elif seriesDesc.tag == "altformavail":
+				if seriesDesc.find('p') is None:
+					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing element <p> in <altformavail>", seriesDesc)
+				else:
+					for para in seriesDesc:
+						if para.tag == "p":
+							if not seriesDesc.find('p').text:
+								issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Empty element <p> in <altformavail>", seriesDesc)
+						else:
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid element " + para.tag + " in <altformavail>", seriesDesc)
 			elif seriesDesc.tag.startswith('c0'):
 				pass
 			else:
@@ -195,7 +212,7 @@ def validate(xml_filename):
 		if file.find('did') is None:
 			issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing <did> in file-level <" + file.tag + "> element", file)
 		else:
-			containerTypes = ('Oversized', 'Video-Tape', 'Mini-DV', 'Reel', 'DVD', 'Cassette', 'Card-File', 'Artifact-box', 'Flat-File', 'VHS', 'Umatic', 'Phonograph-Record', '3.5in-Floppy', '5.25in-Floppy', 'Film', 'Map-Tube', 'CD', 'CD-R', 'Zip-Disk', 'Floppy-Disk', 'Record', 'Microfilm', 'Drawer')
+			containerTypes = ('Oversized', 'Video-Tape', 'Mini-DV', 'Reel', 'DVD', 'Cassette', 'Card-File', 'Artifact-box', 'Flat-File', 'VHS', 'Umatic', 'Phonograph-Record', '3.5in-Floppy', '5.25in-Floppy', 'Film', 'Map-Tube', 'CD', 'CD-R', 'Zip-Disk', 'Floppy-Disk', 'Record', 'Microfilm', 'Drawer', 'Inventory')
 			for childElement in file.find('did'):
 				if not childElement.text:
 					if not childElement.tag == "physdesc":
@@ -1035,12 +1052,13 @@ def validate(xml_filename):
 										#file level
 										issueCount, issueTriplet = check_file(issueCount, issueTriplet, cmpnt, cmpnt2, collId, collNormal)
 									else:
-										if not cmpnt2.attrib['level'].lower() == "subseries":
-											#file level
-											issueCount, issueTriplet = check_file(issueCount, issueTriplet, cmpnt, cmpnt2, collId, collNormal)
-										else:
+										if cmpnt2.attrib['level'].lower() == "subseries" or cmpnt2.attrib['level'].lower() == "series":
 											#subseries level
 											issueCount, issueTriplet = check_series(issueCount, issueTriplet, cmpnt, cmpnt2, collId)
+										else:
+											#file level
+											issueCount, issueTriplet = check_file(issueCount, issueTriplet, cmpnt, cmpnt2, collId, collNormal)
+											
 										
 										#c03
 										for cmpnt3 in cmpnt2:
@@ -1053,12 +1071,13 @@ def validate(xml_filename):
 													#file level
 													issueCount, issueTriplet = check_file(issueCount, issueTriplet, cmpnt2, cmpnt3, collId, collNormal)
 												else:
-													if not cmpnt3.attrib['level'].lower() == "subseries":
-														#file level
-														issueCount, issueTriplet = check_file(issueCount, issueTriplet, cmpnt2, cmpnt3, collId, collNormal)
-													else:
+													if cmpnt3.attrib['level'].lower() == "subseries" or cmpnt3.attrib['level'].lower() == "series":
 														#subsubseries level
 														issueCount, issueTriplet = check_series(issueCount, issueTriplet, cmpnt2, cmpnt3, collId)
+													else:
+														#file level
+														issueCount, issueTriplet = check_file(issueCount, issueTriplet, cmpnt2, cmpnt3, collId, collNormal)
+														
 													
 													#c04
 													for cmpnt4 in cmpnt3:
@@ -1071,12 +1090,13 @@ def validate(xml_filename):
 																#file level
 																issueCount, issueTriplet = check_file(issueCount, issueTriplet, cmpnt3, cmpnt4, collId, collNormal)
 															else:
-																if not cmpnt4.attrib['level'].lower() == "subseries":
-																	#file level
-																	issueCount, issueTriplet = check_file(issueCount, issueTriplet, cmpnt3, cmpnt4, collId, collNormal)
-																else:
+																if cmpnt4.attrib['level'].lower() == "subseries" or cmpnt4.attrib['level'].lower() == "series":
 																	#subsubseries level
 																	issueCount, issueTriplet = check_series(issueCount, issueTriplet, cmpnt3, cmpnt4, collId)
+																else:
+																	#file level
+																	issueCount, issueTriplet = check_file(issueCount, issueTriplet, cmpnt3, cmpnt4, collId, collNormal)
+																
 																
 																#c05
 																for cmpnt5 in cmpnt4:
@@ -1089,12 +1109,13 @@ def validate(xml_filename):
 																			#file level
 																			issueCount, issueTriplet = check_file(issueCount, issueTriplet, cmpnt4, cmpnt5, collId, collNormal)
 																		else:
-																			if not cmpnt5.attrib['level'].lower() == "subseries":
-																				#file level
-																				issueCount, issueTriplet = check_file(issueCount, issueTriplet, cmpnt4, cmpnt5, collId, collNormal)
-																			else:
+																			if cmpnt5.attrib['level'].lower() == "subseries" or cmpnt5.attrib['level'].lower() == "series":
 																				#subsubseries level
 																				issueCount, issueTriplet = check_series(issueCount, issueTriplet, cmpnt4, cmpnt5, collId)
+																			else:
+																				#file level
+																				issueCount, issueTriplet = check_file(issueCount, issueTriplet, cmpnt4, cmpnt5, collId, collNormal)
+																				
 																			
 																			#c06
 																			for cmpnt6 in cmpnt5:
