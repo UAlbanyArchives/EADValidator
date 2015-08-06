@@ -209,6 +209,8 @@ def validate(xml_filename):
 		else:
 			if not file.attrib['id'].startswith('nam_' + collId):
 				issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Component <" + file.tag + "> @id is incorrect", file)
+			if not "_" in file.attrib['id']:
+				issueCount, issueTriplet = error_check(issueCount, issueTriplet, "File-level Component <" + file.tag + "> @id is incorrect, missing underscore (_)", file)
 		if file.find('did') is None:
 			issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing <did> in file-level <" + file.tag + "> element", file)
 		else:
@@ -357,8 +359,111 @@ def validate(xml_filename):
 					pass
 				else:
 					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid element <" + childElement.tag + "> in <" + file.tag + ">", childElement)
+			elif childElement.tag.startswith('c0'):
+				if 'level' not in childElement.attrib:
+					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid element <" + childElement.tag + "> in <" + file.tag + ">", childElement)
+				elif childElement.attrib['level'] == "item":
+					pass
+				else:
+					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid element <" + childElement.tag + "> in <" + file.tag + ">, only item-level allowed below file-level", childElement)
 			else:
 				issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid element <" + childElement.tag + "> in <" + file.tag + ">", childElement)
+						
+		return issueCount, issueTriplet
+		
+		
+################### Validation rules for file-level ##################################################################################################		
+	def check_item(issueCount, issueTriplet, parent, item, collId, collNormal):
+		#define series normal
+		serNormal = parent.find('did/unitdate').attrib['normal']
+		#id check
+		if not "id" in item.attrib:
+			issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Component <" + item.tag + "> missing @id", item)
+		else:
+			if not item.attrib['id'].startswith('nam_' + collId):
+				issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Component <" + item.tag + "> @id is incorrect", item)
+		if item.find('did') is None:
+			issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing <did> in item-level <" + item.tag + "> element", item)
+		else:
+			if item.find('did/unittitle') is None:
+				issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing <unittitle> in item-level <" + item.tag + "> element", item.find('did'))
+			else:
+				if not item.find('did/unittitle').text:
+					if item.find('did/unittitle/emph') is None and item.find('did/unittitle/title') is None:
+						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Item-level <unittitle> element is empty.", item.find('did/unittitle'))
+			for childElement in item.find('did'):
+				if not childElement.text:
+					if not childElement.tag == "physdesc":
+						if not childElement.tag == "dao":
+							if childElement.find('emph') is None:
+								if childElement.find('title') is None:
+									issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<" + childElement.tag + "> element is empty", childElement)
+				invalidList = ("abstract", "daogrp", "head", "langmaterial", "materialspec", "origination", "physloc", "repository")
+				if childElement.tag in invalidList:
+					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid element <" + childElement.tag + "> in <unitdate>", childElement)
+				if childElement.tag == "dao":
+					if "actuate" in childTag.attrib:
+						if not childElement.attrib['actuate'] == "onrequest":
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<dao> @actuate must be 'onrequest'", childElement)
+					else:
+						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<dao> @actuate missing", childElement)
+					if "linktype" in childElement.attrib:
+						if not childElement.attrib['linktype'] == "simple":
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<dao> @linktype must be 'simple'", childElement)
+					else:
+						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<dao> @linktype missing", childElement)
+					if "show" in childElement.attrib:
+						if not childElement.attrib['show'] == "new":
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<dao> @show must be 'new'", childElement)
+					else:
+						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<dao> @show missing", childElement)
+					if "href" in childElement.attrib:
+						if not childElement.attrib['href'].startswith('http://library.albany.edu/speccoll/findaids/eresources/digital_objects/'):
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<dao> @href is incorrect", childElement)
+					else:
+						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<dao> @href missing", childElement)
+				if childElement == "physdesc":
+					if childElement.find('extent') is None:
+						if childElement.find('physfacet') is None:
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "No <extent> or <physfacet> element", childElement)
+						else:
+							if childElement.find('physfacet').text:
+								pass
+							else:
+								issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<physfacet> element has no description", childElement.find('physfacet'))
+					else:
+						if not "unit" in childElement.find('extent').attrib:
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "No @unit in <extent> element", childElement.find('extent'))
+						elif not childElement.find('extent').attrib['unit'] == "cubic ft.":
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid @unit in <extent>, should be 'cubic ft.'", childElement.find('extent'))
+						try:
+							int(childElement.find('extent').text)
+						except ValueError:
+							try:
+								float(childElement.find('extent').text)
+								if childElement.find('extent').text.startswith('.'):
+									issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid <extent>, decimals must start with '0'",childElement.find('extent'))
+							except ValueError:
+								issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid <extent>, should only be number or decimal", childElement.find('extent'))
+		for childTag in item:
+			if childTag.tag == "did":
+				pass
+			elif childTag.tag == "scopecontent":
+				if not childTag.text:
+					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<scopecontent> is missing", childTag)
+			elif childTag.tag == "note":
+				if not childTag.text:
+					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<note> is missing", childTag)
+			elif childTag.tag == "accessrestrict":
+				if childTag.find('p') is None:
+					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing element <p> in <accessrestrict>", childTag)
+				else:
+					if not childTag.find('p').text:
+						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<accessrestrict> paragraph is empty", childTag)
+			elif childTag.tag == "langmaterial":
+					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid element <" + childTag.tag + "> in <" + item.tag + ">", childTag)
+			else:
+				issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid element <" + childTag.tag + "> in <" + item.tag + ">", childTag)
 						
 		return issueCount, issueTriplet
 		
@@ -937,8 +1042,30 @@ def validate(xml_filename):
 					else:
 						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<head> is incorrect, should be 'Bibliography' or 'Selected Bibliography'", archdesc.find('bibliography/head'))
 			for bibRef in archdesc.find('bibliography'):
-				if bibRef.tag.lower() == "head":
+				if bibRef.tag == "head":
 					pass
+				elif bibRef.tag == "bibliography":
+					for subBib in bibRef:
+						if subBib.tag == "head":
+							pass
+						else:
+							if not subBib.text:
+								if subBib.find('emph') is None:
+									if subBib.find('title') is None:
+										issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Element <" + subBib.tag + "> is empty", subBib)
+									elif not subBib.find('title').text:
+										if subBib.find('title/emph') is None:
+											issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Element <" + subBib.tag + "> is empty", subBib)
+										elif not subBib.find('title/emph').text:
+											issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Element <" + subBib.tag + "> is empty", subBib)
+								elif not subBib.find('emph').text:
+									issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Element <" + subBib.tag + "> is empty", subBib)
+							if subBib.tag == "p":
+								pass
+							elif subBib.tag == "bibref" or subBib.tag == "archref":
+								pass
+							else:
+								issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid element <" + subBib.tag + "> in <bibliography>", subBib)
 				else:
 					if not bibRef.text:
 						if bibRef.find('emph') is None:
@@ -1034,9 +1161,13 @@ def validate(xml_filename):
 						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid element <" + cmpnt.tag + ">", cmpnt)
 					else:
 						#########################################################################Test This
-						if cmpnt.find('c02') is None and not cmpnt.attrib['level'].lower() == "series":
-							#file level
-							issueCount, issueTriplet = check_file(issueCount, issueTriplet, archdesc.find('dsc'), cmpnt, collId, collNormal)
+						if cmpnt.find('c02') is None and not cmpnt.attrib['level'] == "series":
+							if cmpnt.attrib['level'] == "item":
+								#item level
+								issueCount, issueTriplet = check_item(issueCount, issueTriplet, archdesc.find('dsc'), cmpnt, collId, collNormal)
+							else:
+								#file level
+								issueCount, issueTriplet = check_file(issueCount, issueTriplet, archdesc.find('dsc'), cmpnt, collId, collNormal)
 						else:
 							#series level
 							issueCount, issueTriplet = check_series(issueCount, issueTriplet, archdesc.find('dsc'), cmpnt, collId)
@@ -1052,9 +1183,12 @@ def validate(xml_filename):
 										#file level
 										issueCount, issueTriplet = check_file(issueCount, issueTriplet, cmpnt, cmpnt2, collId, collNormal)
 									else:
-										if cmpnt2.attrib['level'].lower() == "subseries" or cmpnt2.attrib['level'].lower() == "series":
+										if cmpnt2.attrib['level'] == "subseries" or cmpnt2.attrib['level'] == "series":
 											#subseries level
 											issueCount, issueTriplet = check_series(issueCount, issueTriplet, cmpnt, cmpnt2, collId)
+										elif cmpnt2.attrib['level'] == "item":
+											#item level
+											issueCount, issueTriplet = check_item(issueCount, issueTriplet, cmpnt, cmpnt2, collId, collNormal)									
 										else:
 											#file level
 											issueCount, issueTriplet = check_file(issueCount, issueTriplet, cmpnt, cmpnt2, collId, collNormal)
@@ -1071,9 +1205,12 @@ def validate(xml_filename):
 													#file level
 													issueCount, issueTriplet = check_file(issueCount, issueTriplet, cmpnt2, cmpnt3, collId, collNormal)
 												else:
-													if cmpnt3.attrib['level'].lower() == "subseries" or cmpnt3.attrib['level'].lower() == "series":
+													if cmpnt3.attrib['level'] == "subseries" or cmpnt3.attrib['level'] == "series":
 														#subsubseries level
 														issueCount, issueTriplet = check_series(issueCount, issueTriplet, cmpnt2, cmpnt3, collId)
+													elif cmpnt3.attrib['level'] == "item":
+														#item level
+														issueCount, issueTriplet = check_item(issueCount, issueTriplet, cmpnt2, cmpnt3, collId, collNormal)
 													else:
 														#file level
 														issueCount, issueTriplet = check_file(issueCount, issueTriplet, cmpnt2, cmpnt3, collId, collNormal)
@@ -1090,9 +1227,12 @@ def validate(xml_filename):
 																#file level
 																issueCount, issueTriplet = check_file(issueCount, issueTriplet, cmpnt3, cmpnt4, collId, collNormal)
 															else:
-																if cmpnt4.attrib['level'].lower() == "subseries" or cmpnt4.attrib['level'].lower() == "series":
+																if cmpnt4.attrib['level'] == "subseries" or cmpnt4.attrib['level'] == "series":
 																	#subsubseries level
 																	issueCount, issueTriplet = check_series(issueCount, issueTriplet, cmpnt3, cmpnt4, collId)
+																elif cmpnt4.attrib['level'] == "item":
+																	#item level
+																	issueCount, issueTriplet = check_item(issueCount, issueTriplet, cmpnt3, cmpnt4, collId, collNormal)
 																else:
 																	#file level
 																	issueCount, issueTriplet = check_file(issueCount, issueTriplet, cmpnt3, cmpnt4, collId, collNormal)
@@ -1109,9 +1249,12 @@ def validate(xml_filename):
 																			#file level
 																			issueCount, issueTriplet = check_file(issueCount, issueTriplet, cmpnt4, cmpnt5, collId, collNormal)
 																		else:
-																			if cmpnt5.attrib['level'].lower() == "subseries" or cmpnt5.attrib['level'].lower() == "series":
+																			if cmpnt5.attrib['level'] == "subseries" or cmpnt5.attrib['level'] == "series":
 																				#subsubseries level
 																				issueCount, issueTriplet = check_series(issueCount, issueTriplet, cmpnt4, cmpnt5, collId)
+																			elif cmpnt5.attrib['level'] == "item":
+																				#item level
+																				issueCount, issueTriplet = check_item(issueCount, issueTriplet, cmpnt4, cmpnt5, collId, collNormal)
 																			else:
 																				#file level
 																				issueCount, issueTriplet = check_file(issueCount, issueTriplet, cmpnt4, cmpnt5, collId, collNormal)
