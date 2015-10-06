@@ -214,14 +214,19 @@ def validate(xml_filename):
 		if file.find('did') is None:
 			issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing <did> in file-level <" + file.tag + "> element", file)
 		else:
-			containerTypes = ('Oversized', 'Video-Tape', 'Mini-DV', 'Reel', 'DVD', 'Cassette', 'Card-File', 'Artifact-box', 'Flat-File', 'VHS', 'Umatic', 'Phonograph-Record', '3.5in-Floppy', '5.25in-Floppy', 'Film', 'Map-Tube', 'CD', 'CD-R', 'Zip-Disk', 'Floppy-Disk', 'Record', 'Microfilm', 'Drawer', 'Inventory')
+			containerTypes = ('Oversized', 'Video-Tape', 'Mini-DV', 'Reel', 'DVD', 'Cassette', 'Card-File', 'Artifact-box', 'Flat-File', 'VHS', 'Umatic', 'Phonograph-Record', '3.5in-Floppy', '5.25in-Floppy', 'Film', 'Map-Tube', 'CD', 'CD-R', 'Zip-Disk', 'Floppy-Disk', 'Record', 'Microfilm', 'Drawer', 'Inventory', 'PDF', 'JPG', 'MP3', 'Web-Archive', 'Call-Number')
 			for childElement in file.find('did'):
 				if not childElement.text:
 					if not childElement.tag == "physdesc":
 						if not childElement.tag == "dao":
-							if childElement.find('emph') is None:
-								if childElement.find('title') is None:
-									issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<" + childElement.tag + "> element is empty", childElement)
+							if childElement.tag == "container":
+								digitalFormats = ('PDF', 'MP3', 'JPG', 'Web-Archive')
+								if not childElement.attrib['type'] in digitalFormats:
+									issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<" + childElement.tag + "> element is empty or @type is incorrect", childElement)
+							else:
+								if childElement.find('emph') is None:
+									if childElement.find('title') is None:
+										issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<" + childElement.tag + "> element is empty", childElement)
 			if file.find('did/container') is None:
 				if file.find('did/dao') is None:
 					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing <container> in file-level <" + file.tag + "> element", file.find('did'))
@@ -312,7 +317,9 @@ def validate(xml_filename):
 						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<dao> @show missing", childTag)
 					if "href" in childTag.attrib:
 						if not childTag.attrib['href'].startswith('http://library.albany.edu/speccoll/findaids/eresources/digital_objects/'):
-							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<dao> @href is incorrect", childTag)
+							if not childTag.attrib['href'].startswith('https://web.archive.org/web'):
+								if not childTag.attrib['href'].startswith('http://wayback.archive-it.org'):
+									issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<dao> @href is incorrect", childTag)
 					else:
 						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<dao> @href missing", childTag)
 				if childTag == "physdesc":

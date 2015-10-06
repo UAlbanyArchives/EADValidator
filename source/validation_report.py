@@ -100,7 +100,7 @@ for filename in os.listdir(path):
 	
 h5_element = ET.Element('h5')
 h5_element.set('class', 'h5')
-h5_element.text = "Generated " + str(time.strftime("%d/%m/%Y")) + ", " + str(time.strftime("%H:%M:%S"))
+h5_element.text = "Generated " + str(time.strftime("%m/%d/%Y")) + ", " + str(time.strftime("%H:%M:%S"))
 count_element = ET.Element('h5')
 count_element.set('class', 'h5')
 count_element.text = str(collectionError) + " of " + str(collectionCount) + " collections are invalid, with " + str(totalError) + " total errors."
