@@ -868,6 +868,8 @@ def validate(xml_filename):
 				else:
 					if acqInfo.tag == "p":
 						pass
+					elif acqInfo.tag == "chronlist":
+						pass
 					else:
 						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid element <" + acqInfo.tag + "> in <acqinfo>", acqInfo)
 						
@@ -1117,7 +1119,7 @@ def validate(xml_filename):
 				if separated.tag.lower() == "head":
 					pass
 				else:
-					if not separated.text:
+					if not separated.text and not separated.find("emph").text:
 						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Element <" + separated.tag + "> is empty", separated)
 					if separated.tag == "p":
 						pass
