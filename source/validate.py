@@ -6,6 +6,9 @@ from resource_path import resource_path
 
 def validate(xml_filename):
 
+	collectionExtentUnits = ["Vol.", "cubic ft.", "Digital Files", "Web Archives"]
+	seriesExtentUnits = ["Vol.", "cubic ft.", "Digital Files", "Web Archives"]
+	lowerExtentUnits = ["Vol.", "cubic ft.", "GB", "MB", "KB"]
 	# called on each error that is found and reports the error
 	def error_check(issueCount, issueTriplet, message, element):
 		issueCount = issueCount + 1
@@ -139,17 +142,23 @@ def validate(xml_filename):
 					else:
 						if not "unit" in seriesChild.find('extent').attrib:
 							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "No @unit in <extent> element", seriesChild.find('extent'))
-						elif not seriesChild.find('extent').attrib['unit'] == "cubic ft.":
-							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid @unit in <extent>, should be 'cubic ft.'", seriesChild.find('extent'))
-						try:
-							int(seriesChild.find('extent').text)
-						except ValueError:
+						elif not seriesChild.find('extent').attrib['unit'] in seriesExtentUnits:
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid @unit in <extent>, should be: '" + "' '".join(seriesExtentUnits) + "'", seriesChild.find('extent'))
+						if not seriesChild.find('extent').text:
+							if seriesChild.find('extent').attrib['unit'] == "Web Archives":
+								pass
+							else:
+								issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid <extent>, value missing", seriesChild.find('extent'))
+						else:
 							try:
-								float(seriesChild.find('extent').text)
-								if seriesChild.find('extent').text.startswith('.'):
-									issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid <extent>, decimals must start with '0'",seriesChild.find('extent'))
-							except ValueError:
-								issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid <extent>, should only be number or decimal", seriesChild.find('extent'))
+								int(seriesChild.find('extent').text)
+							except:
+								try:
+									float(seriesChild.find('extent').text)
+									if seriesChild.find('extent').text.startswith('.'):
+										issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid <extent>, decimals must start with '0'",seriesChild.find('extent'))
+								except:
+									issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid <extent>, should only be number or decimal", seriesChild.find('extent'))
 				else:
 					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid element <" + seriesChild.tag + "> in <" + series.tag + ">", seriesChild)
 		for seriesDesc in series:
@@ -192,6 +201,26 @@ def validate(xml_filename):
 								issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Empty element <p> in <altformavail>", seriesDesc)
 						else:
 							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid element " + para.tag + " in <altformavail>", seriesDesc)
+			elif seriesDesc.tag == "acqinfo":
+				if seriesDesc.find('p') is None:
+					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing element <p> in <acqinfo>", seriesDesc)
+				else:
+					for para in seriesDesc:
+						if para.tag == "p":
+							if not seriesDesc.find('p').text:
+								issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Empty element <p> in <acqinfo>", seriesDesc)
+						else:
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid element " + para.tag + " in <acqinfo>", seriesDesc)
+			elif seriesDesc.tag == "bioghist":
+				if seriesDesc.find('p') is None:
+					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing element <p> in <bioghist>", seriesDesc)
+				else:
+					for para in seriesDesc:
+						if para.tag == "p":
+							if not seriesDesc.find('p').text:
+								issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Empty element <p> in <bioghist>", seriesDesc)
+						else:
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid element " + para.tag + " in <bioghist>", seriesDesc)
 			elif seriesDesc.tag.startswith('c0'):
 				pass
 			else:
@@ -214,13 +243,13 @@ def validate(xml_filename):
 		if file.find('did') is None:
 			issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing <did> in file-level <" + file.tag + "> element", file)
 		else:
-			containerTypes = ('Oversized', 'Video-Tape', 'Mini-DV', 'Reel', 'DVD', 'Cassette', 'Card-File', 'Artifact-box', 'Flat-File', 'VHS', 'Umatic', 'Phonograph-Record', '3.5in-Floppy', '5.25in-Floppy', 'Film', 'Map-Tube', 'CD', 'CD-R', 'Zip-Disk', 'Floppy-Disk', 'Record', 'Microfilm', 'Drawer', 'Inventory', 'PDF', 'JPG', 'MP3', 'Web-Archive', 'Call-Number')
+			containerTypes = ('Oversized', 'Video-Tape', 'Mini-DV', 'Reel', 'DVD', 'Cassette', 'Card-File', 'Artifact-box', 'Flat-File', 'VHS', 'Umatic', 'Phonograph-Record', '3.5in-Floppy', '5.25in-Floppy', 'Film', 'Map-Tube', 'CD', 'CD-R', 'Zip-Disk', 'Floppy-Disk', 'Record', 'Microfilm', 'Drawer', 'Inventory', 'PDF', 'JPG', 'MP3', 'Web-Archive', 'Call-Number', 'Database')
 			for childElement in file.find('did'):
 				if not childElement.text:
 					if not childElement.tag == "physdesc":
 						if not childElement.tag == "dao":
 							if childElement.tag == "container":
-								digitalFormats = ('PDF', 'MP3', 'JPG', 'Web-Archive')
+								digitalFormats = ('PDF', 'MP3', 'JPG', 'Web-Archive', 'Database')
 								if not childElement.attrib['type'] in digitalFormats:
 									issueCount, issueTriplet = error_check(issueCount, issueTriplet, "<" + childElement.tag + "> element is empty or @type is incorrect", childElement)
 							else:
@@ -334,8 +363,8 @@ def validate(xml_filename):
 					else:
 						if not "unit" in childTag.find('extent').attrib:
 							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "No @unit in <extent> element", childTag.find('extent'))
-						elif not childTag.find('extent').attrib['unit'] == "cubic ft.":
-							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid @unit in <extent>, should be 'cubic ft.'", childTag.find('extent'))
+						elif not childTag.find('extent').attrib['unit'] in lowerExtentUnits:
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid @unit in <extent>, should be: '" + "' '".join(lowerExtentUnits) + "'", childTag.find('extent'))
 						try:
 							int(childTag.find('extent').text)
 						except ValueError:
@@ -441,8 +470,8 @@ def validate(xml_filename):
 					else:
 						if not "unit" in childElement.find('extent').attrib:
 							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "No @unit in <extent> element", childElement.find('extent'))
-						elif not childElement.find('extent').attrib['unit'] == "cubic ft.":
-							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid @unit in <extent>, should be 'cubic ft.'", childElement.find('extent'))
+						elif not childElement.find('extent').attrib['unit'] in lowerExtentUnits:
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid @unit in <extent>, should be: '" + "' '".join(lowerExtentUnits) + "'", childElement.find('extent'))
 						try:
 							int(childElement.find('extent').text)
 						except ValueError:
@@ -500,10 +529,13 @@ def validate(xml_filename):
 		#check processing instructions
 		piNoSeries = "<?xml version='1.0' encoding='utf-8'?><?xml-stylesheet type='text/xsl' href='collection-level_no_series.xsl'?> <!DOCTYPE ead SYSTEM 'ead.dtd'>"
 		piSeries = "<?xml version='1.0' encoding='utf-8'?><?xml-stylesheet type='text/xsl' href='collection-level.xsl'?> <!DOCTYPE ead SYSTEM 'ead.dtd'>"
+		piNewspapers = "<?xml version='1.0' encoding='utf-8'?><?xml-stylesheet type='text/xsl' href='student_newspapers.xsl'?> <!DOCTYPE ead SYSTEM 'ead.dtd'>"
 		
 		with open (xml_filename, "r") as fileInput:
 			fileString=fileInput.read().replace('\n', '')
 			if fileString.startswith(piSeries) or fileString.startswith(piNoSeries):
+				pass
+			elif xml_root.attrib['id'] == "nam_ua809" and fileString.startswith(piNewspapers):
 				pass
 			else:
 				issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Processing instructions (Doctype, stylesheet) do not match", xml_root)
@@ -770,8 +802,8 @@ def validate(xml_filename):
 			else:
 				if not "unit" in archdesc.find('did/physdesc/extent').attrib:
 					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "No @unit in collection-level <extent> element", archdesc.find('did/physdesc/extent'))
-				elif not archdesc.find('did/physdesc/extent').attrib['unit'] == "cubic ft.":
-					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid @unit in collection-level <extent>, should be 'cubic ft.'", archdesc.find('did/physdesc/extent'))
+				elif not archdesc.find('did/physdesc/extent').attrib['unit'] in collectionExtentUnits:
+					issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid @unit in collection-level <extent>, should be: '" + "' '".join(collectionExtentUnits) + "'", archdesc.find('did/physdesc/extent'))
 				try:
 					int(archdesc.find('did/physdesc/extent').text)
 				except ValueError:
@@ -1169,7 +1201,6 @@ def validate(xml_filename):
 					elif not cmpnt.tag == "c01":
 						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Invalid element <" + cmpnt.tag + ">", cmpnt)
 					else:
-						#########################################################################Test This
 						if cmpnt.find('c02') is None and not cmpnt.attrib['level'] == "series":
 							if cmpnt.attrib['level'] == "item":
 								#item level
