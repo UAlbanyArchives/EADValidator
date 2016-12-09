@@ -1027,7 +1027,7 @@ def validate(xml_filename):
 					if "source" not in heading.attrib:
 						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "@source missing for controlled access heading", heading)
 					else:
-						if heading.attrib['source'] == "lcsh" or heading.attrib['source'] == "aat" or heading.attrib['source'] == "local" or heading.attrib['source'] == "tgm" or heading.attrib['source'] == "tgn":
+						if heading.attrib['source'] == "lcsh" or heading.attrib['source'] == "aat" or heading.attrib['source'] == "local" or heading.attrib['source'] == "tgm" or heading.attrib['source'] == "tgn" or heading.attrib['source'] == "meg":
 							pass
 						else:
 							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "@source is incorrect, should be 'lcsh,' 'aat, 'tgm,' 'tgn,' or 'local'", heading)
