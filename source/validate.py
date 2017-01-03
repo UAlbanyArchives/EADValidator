@@ -243,7 +243,7 @@ def validate(xml_filename):
 		if file.find('did') is None:
 			issueCount, issueTriplet = error_check(issueCount, issueTriplet, "Missing <did> in file-level <" + file.tag + "> element", file)
 		else:
-			containerTypes = ('Oversized', 'Video-Tape', 'Mini-DV', 'Reel', 'DVD', 'Cassette', 'Card-File', 'Artifact-box', 'Flat-File', 'VHS', 'Umatic', 'Phonograph-Record', '3.5in-Floppy', '5.25in-Floppy', 'Film', 'Map-Tube', 'CD', 'CD-R', 'Zip-Disk', 'Floppy-Disk', 'Record', 'Microfilm', 'Drawer', 'Inventory', 'PDF', 'JPG', 'MP3', 'Web-Archive', 'Call-Number', 'Database')
+			containerTypes = ('Oversized', 'Video-Tape', 'Mini-DV', 'Reel', 'DVD', 'Cassette', 'Card-File', 'Artifact-box', 'Flat-File', 'VHS', 'Umatic', 'Phonograph-Record', '3.5in-Floppy', '5.25in-Floppy', 'Film', 'Map-Tube', 'CD', 'CD-R', 'Zip-Disk', 'Floppy-Disk', 'Record', 'Microfilm', 'Drawer', 'Inventory', 'PDF', 'JPG', 'MP3', 'Web-Archive', 'Call-Number', 'Database', 'Volume')
 			for childElement in file.find('did'):
 				if not childElement.text:
 					if not childElement.tag == "physdesc":
@@ -1030,7 +1030,7 @@ def validate(xml_filename):
 						if heading.attrib['source'] == "lcsh" or heading.attrib['source'] == "aat" or heading.attrib['source'] == "local" or heading.attrib['source'] == "tgm" or heading.attrib['source'] == "tgn" or heading.attrib['source'] == "meg":
 							pass
 						else:
-							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "@source is incorrect, should be 'lcsh,' 'aat, 'tgm,' 'tgn,' or 'local'", heading)
+							issueCount, issueTriplet = error_check(issueCount, issueTriplet, "@source is incorrect, should be 'lcsh,' 'aat,' 'meg,' 'tgm,' 'tgn,' or 'local'", heading)
 					if "encodinganalog" not in heading.attrib:
 						issueCount, issueTriplet = error_check(issueCount, issueTriplet, "@encodinganalog missing for controlled access heading", heading)
 					if heading.tag == "persname":
