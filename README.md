@@ -1,6 +1,8 @@
 EAD Validator
 ========
 
+#### This project is no longer actively maintained, see [asInventory](https://github.com/UAlbanyArchives/asInventory) for the current project
+
 EAD Validator is a strict, rule-based validation tool for Encoded Archival Description. It is written in Python 2.7 and converted to an .exe without any dependencies. Many of the rules were written specifically for the M.E. Grenander Department of Special Collections & Archives at the University at Albany, SUNY. The strictness allows valid EAD files to be used as a consistent data store for archival metadata that will enable the automation of metadata creation, administration, and publication.
 
 
